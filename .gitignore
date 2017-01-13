@@ -45,3 +45,11 @@ $RECYCLE.BIN/
 Network Trash Folder
 Temporary Items
 .apdisk
+
+# CarND stuff
+data
+.ipynb_checkpoints
+*.h5
+models
+*.swp
+*.p
