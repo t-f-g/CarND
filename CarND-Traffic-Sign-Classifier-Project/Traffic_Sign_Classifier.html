@@ -13394,8 +13394,10 @@ qHCP4P8DvGbZJeaFIHQAAAAASUVORK5CYII=
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<p><strong>Answer:</strong></p>
-<p>I ran the evaluation over all 29 signs in the new_signs.p file.  In general, the quality of these images is better - sharper, higher contrast.</p>
+<p><strong>Answer:</strong>
+See the analysis below Question 7 for 29 signs.</p>
+<p>I ran the evaluation over all 29 signs in the new_signs.p file.  In general, the quality of these images is better - sharper, higher contrast.  Most of them were identified correctly.</p>
+<p>There were three images that were not correctly classified, one was expected - the "keep right" sign was photographed at an extreme angle and the model was never trained on this.  The "30 zone" sign should have been correctly identified, there was ample training data.  A few of the signs had leaves/stickers partially blocking the view of the sign, these artifacts werent significant enough to hinder the classification.</p>
 
 </div>
 </div>
@@ -13451,7 +13453,9 @@ qHCP4P8DvGbZJeaFIHQAAAAASUVORK5CYII=
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
 <p><strong>Answer:</strong>
-Looking at the plots below I can see 3 failures in classification out of the 29 signs.  This aligns to above accuracy assessment.</p>
+Looking at the plots below I can see 3 failures in classification out of the 29 signs.  This aligns to above accuracy assessment of roughly 90%.</p>
+<p>The testing on the dataset showed an accuracy of 98%.</p>
+<p>The reason for this difference is two fold.  First, its simply statistical - the amount of real world test data was 29 signs, not 10000+ as in the dataset.  The more you test, the more accurate your score.  Secondly, the model was not trained on this style of real world photography - bright, clear, high contrast images.</p>
 
 </div>
 </div>
