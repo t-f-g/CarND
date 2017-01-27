@@ -8,9 +8,15 @@ This project will analyze the output of a driving simulation and predict the app
 The first goal is to simplify the data so that the model can also be simple.  Then we need enough data so that it can generalize.
 ![Preprocessing of Images and Data](solution approach.png)
 
+Since standard python data structures were used and the stored images were 32x32x1, they all fit into memory nicely and no generators were needed.
+
+The training data was shuffled and split into a 17.5% validation.  Testing will occur solely on the virtual test track.
+
 ##Model overview
 
 This is a basic model starting with normalization, 2d convolution with rectified linear unit activation which then gets pooled and dropped and flattened.
+
+The model was compiled using the Adam optimizer.
 
 ![Model Overview](model overview.png)
 
@@ -36,3 +42,5 @@ Trainable params: 945
 Non-trainable params: 0
 ____________________________________________________________________________________________________
 ```
+#Conclusion
+The car was able to navigate all difficult portions of the test track (the branch off into the dirt portion and the tight corner two thirds of the way through) and complete endless laps at the appropriate speed.
