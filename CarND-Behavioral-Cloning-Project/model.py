@@ -6,15 +6,15 @@
 # Preprocess Images with opencv2
 import cv2
 import numpy as np
+import matplotlib.pyplot as plt
 
 
 # In[2]:
 
 # Preprocess Images with opencv2
 from IPython import get_ipython
-import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
-#get_ipython().magic('matplotlib inline')
+#%matplotlib inline
  
 # load the image and show it
 #reading in an image
