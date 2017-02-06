@@ -83,7 +83,7 @@ ax2.imshow(dst)
 ax2.set_title('Undistorted Image', fontsize=30)
 
 
-# In[23]:
+# In[69]:
 
 # Test undistortion on a lane image
 img_str8 = cv2.imread('test_images/straight_lines1.jpg')
@@ -96,23 +96,19 @@ img_test5_undistorted = cv2.undistort(img_test5, distortion["mtx"], distortion["
 
 # Visualize undistortion
 f, (ax1, ax2) = plt.subplots(1, 2, figsize=(20,10))
-img_str8 = cv2.cvtColor(img_str8, cv2.COLOR_BGR2RGB) # OpenCV imread is BGR, matplotlib is RGB
-ax1.imshow(img_str8)
+ax1.imshow(cv2.cvtColor(img_str8, cv2.COLOR_BGR2RGB)) # OpenCV imread is BGR, matplotlib is RGB
 ax1.set_title('Original straight_lines1.jpg', fontsize=20)
-img_str8_undistorted = cv2.cvtColor(img_str8_undistorted, cv2.COLOR_BGR2RGB)
-ax2.imshow(img_str8_undistorted)
+ax2.imshow(cv2.cvtColor(img_str8_undistorted, cv2.COLOR_BGR2RGB))
 ax2.set_title('Undistorted straight_lines1.jpg', fontsize=20)
 
 f, (ax1, ax2) = plt.subplots(1, 2, figsize=(20,10))
-img_test5 = cv2.cvtColor(img_test5, cv2.COLOR_BGR2RGB) # OpenCV imread is BGR, matplotlib is RGB
-ax1.imshow(img_test5)
+ax1.imshow(cv2.cvtColor(img_test5, cv2.COLOR_BGR2RGB))
 ax1.set_title('Original test5.jpg', fontsize=20)
-img_test5_undistorted = cv2.cvtColor(img_test5_undistorted, cv2.COLOR_BGR2RGB)
-ax2.imshow(img_test5_undistorted)
+ax2.imshow(cv2.cvtColor(img_test5_undistorted, cv2.COLOR_BGR2RGB))
 ax2.set_title('Undistorted test5.jpg', fontsize=20)
 
 
-# In[24]:
+# In[70]:
 
 def warper(img, src, dst):
 
@@ -124,7 +120,7 @@ def warper(img, src, dst):
     return warped
 
 
-# In[25]:
+# In[73]:
 
 src = np.float32(
     [[(img_size[0] / 2) - 55, img_size[1] / 2 + 100],
@@ -142,63 +138,58 @@ img_test5_warped = warper(img_test5_undistorted, src, dst)
 
 # Visualize warping
 f, (ax1, ax2) = plt.subplots(1, 2, figsize=(20,10))
+img_str8_warped = cv2.cvtColor(img_str8_warped, cv2.COLOR_BGR2RGB)
 ax1.imshow(img_str8_warped)
 ax1.set_title('Warped straight_lines1.jpg', fontsize=20)
+img_test5_warped = cv2.cvtColor(img_test5_warped, cv2.COLOR_BGR2RGB)
 ax2.imshow(img_test5_warped)
 ax2.set_title('Warped test5.jpg', fontsize=20)
 
 
 # ## The next step is to prepare the image images before edge detection, focusing on yellow and white lines
 
-# In[50]:
+# In[77]:
 
 # test a few images first
-test5_HSV_img = cv2.cvtColor(img_test5_warped, cv2.COLOR_RGB2HSV).astype(np.float)
+test5_HLS_img = cv2.cvtColor(img_test5_warped, cv2.COLOR_RGB2HLS).astype(np.float)
 
-# Visualize HSV
+# Visualize HSL
 f, (ax0, ax1, ax2) = plt.subplots(1, 3, figsize=(20,10))
-ax0.imshow(test5_HSV_img[:,:,0], cmap='gray')
+ax0.imshow(test5_HLS_img[:,:,0], cmap='gray')
 ax0.set_title('test5 Hue', fontsize=20)
-ax1.imshow(test5_HSV_img[:,:,1], cmap='gray')
-ax1.set_title('test5 Saturation', fontsize=20)
-ax2.imshow(test5_HSV_img[:,:,2], cmap='gray')
-ax2.set_title('test5 Value', fontsize=20)
+ax1.imshow(test5_HLS_img[:,:,1], cmap='gray')
+ax1.set_title('test5 Lightness', fontsize=20)
+ax2.imshow(test5_HLS_img[:,:,2], cmap='gray')
+ax2.set_title('test5 Saturation', fontsize=20)
 
-# Threshold each channel
-#test5_S_img_binary = np.zeros_like(test5_HSV_img[:,:,1])
-#test5_S_img_binary[(test5_HSV_img[:,:,1] >= 120) & (test5_HSV_img[:,:,1] <= 200)] = 1
-#test5_V_img_binary = np.zeros_like(test5_HSV_img[:,:,2])
-#test5_V_img_binary[(test5_HSV_img[:,:,2] >= 80) & (test5_HSV_img[:,:,2] <= 230)] = 1
-
-
-test5_H_sobelx = cv2.Sobel(test5_HSV_img[:,:,0], cv2.CV_64F, 1, 0, ksize = 5)
+test5_H_sobelx = cv2.Sobel(test5_HLS_img[:,:,0], cv2.CV_64F, 1, 0, ksize = 5)
 abs_test5_H_sobelx = np.absolute(test5_H_sobelx) # Absolute x derivative to accentuate lines away from horizontal
 scaled_test5_H_sobelx = np.uint8(255*abs_test5_H_sobelx/np.max(abs_test5_H_sobelx))
-test5_S_sobelx = cv2.Sobel(test5_HSV_img[:,:,1], cv2.CV_64F, 1, 0, ksize = 5)
+test5_L_sobelx = cv2.Sobel(test5_HLS_img[:,:,1], cv2.CV_64F, 1, 0, ksize = 5)
+abs_test5_L_sobelx = np.absolute(test5_L_sobelx) # Absolute x derivative to accentuate lines away from horizontal
+scaled_test5_L_sobelx = np.uint8(255*abs_test5_L_sobelx/np.max(abs_test5_L_sobelx))
+test5_S_sobelx = cv2.Sobel(test5_HLS_img[:,:,2], cv2.CV_64F, 1, 0, ksize = 5)
 abs_test5_S_sobelx = np.absolute(test5_S_sobelx) # Absolute x derivative to accentuate lines away from horizontal
 scaled_test5_S_sobelx = np.uint8(255*abs_test5_S_sobelx/np.max(abs_test5_S_sobelx))
-test5_V_sobelx = cv2.Sobel(test5_HSV_img[:,:,2], cv2.CV_64F, 1, 0, ksize = 5)
-abs_test5_V_sobelx = np.absolute(test5_V_sobelx) # Absolute x derivative to accentuate lines away from horizontal
-scaled_test5_V_sobelx = np.uint8(255*abs_test5_V_sobelx/np.max(abs_test5_V_sobelx))
 
 f, (ax0, ax1, ax2) = plt.subplots(1, 3, figsize = (20,10))
 ax0.imshow(test5_H_sobelx, cmap='gray')
 ax0.set_title('test5 Hue Sobel', fontsize = 20)
-ax1.imshow(test5_S_sobelx, cmap='gray')
-ax1.set_title('test5 Saturation Sobel', fontsize = 20)
-ax2.imshow(test5_V_sobelx, cmap='gray')
-ax2.set_title('test5 Value Sobel', fontsize = 20)
+ax1.imshow(test5_L_sobelx, cmap='gray')
+ax1.set_title('test5 Lightness Sobel', fontsize = 20)
+ax2.imshow(test5_S_sobelx, cmap='gray')
+ax2.set_title('test5 Saturation Sobel', fontsize = 20)
 
 f, (ax0, ax1, ax2) = plt.subplots(1, 3, figsize = (20,10))
 ax0.imshow(scaled_test5_H_sobelx, cmap='gray')
 ax0.set_title('test5 Hue Sobel Abs', fontsize = 20)
-ax1.imshow(scaled_test5_S_sobelx, cmap='gray')
-ax1.set_title('test5 Saturation Sobel Abs', fontsize = 20)
-ax2.imshow(scaled_test5_V_sobelx, cmap='gray')
-ax2.set_title('test5 Value Sobel Abs', fontsize = 20)
+ax1.imshow(scaled_test5_L_sobelx, cmap='gray')
+ax1.set_title('test5 Lightness Sobel Abs', fontsize = 20)
+ax2.imshow(scaled_test5_S_sobelx, cmap='gray')
+ax2.set_title('test5 Saturation Sobel Abs', fontsize = 20)
 
 
-# In[ ]:
+# In[82]:
 
 import numpy as np
 import cv2
@@ -208,14 +199,16 @@ import matplotlib.image as mpimg
 #image = mpimg.imread('bridge_shadow.jpg')
 
 # Edit this function to create your own pipeline.
-def pipeline(img, s_thresh=(170, 249), sx_thresh=(31, 148)):
+def pipeline(img, s_thresh=(180, 240), sx_thresh=(25, 145)):
     img = np.copy(img)
     # Convert to HLS color space and separate the L, S channel
     hls = cv2.cvtColor(img, cv2.COLOR_RGB2HLS).astype(np.float)
-    l_channel = hls[:,:,1]
+    #l_channel = hls[:,:,1]
     s_channel = hls[:,:,2]
+    gray = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
     # Sobel x
-    sobelx = cv2.Sobel(l_channel, cv2.CV_64F, 1, 0) # Take the derivative in x
+    sobelx = cv2.Sobel(gray, cv2.CV_64F, 1, 0) # Take the derivative in x
+    
     abs_sobelx = np.absolute(sobelx) # Absolute x derivative to accentuate lines away from horizontal
     scaled_sobel = np.uint8(255*abs_sobelx/np.max(abs_sobelx))
     
@@ -223,7 +216,7 @@ def pipeline(img, s_thresh=(170, 249), sx_thresh=(31, 148)):
     sxbinary = np.zeros_like(scaled_sobel)
     sxbinary[(scaled_sobel >= sx_thresh[0]) & (scaled_sobel <= sx_thresh[1])] = 1
     
-    # Threshold color channel
+    # Threshold saturation channel
     s_binary = np.zeros_like(s_channel)
     s_binary[(s_channel >= s_thresh[0]) & (s_channel <= s_thresh[1])] = 1
     
@@ -242,8 +235,7 @@ ax1.imshow(img_str8_warped)
 ax1.set_title('straight_lines1.jpg warped', fontsize = 20)
 ax2.imshow(img_str8_warped_binary, cmap='gray')
 ax2.set_title('straight_lines1.jpg after gradient thresholding', fontsize = 20)
-#ax3.imshow(cv2.calcHist([img_str8_warped_binary],[0],None,[256],[0,256]))
-ax3.hist(np.sum(img_str8_warped_binary,axis=0))
+ax3.plot(np.sum(img_str8_warped_binary[img_str8_warped_binary.shape[0]/2:,:], axis=0))
 ax3.set_title('straight_lines1.jpg histogram', fontsize = 20)
 
 plt.subplots_adjust(left=0., right=1, top=0.9, bottom=0.)
@@ -258,8 +250,7 @@ ax1.imshow(img_test5_warped)
 ax1.set_title('test5.jpg warped', fontsize = 20)
 ax2.imshow(img_test5_warped_binary, cmap='gray')
 ax2.set_title('test5.jpg after gradient thresholding', fontsize = 20)
-#ax3.imshow(cv2.calcHist([img_test5_warped_binary],[0],None,[256],[0,256]))
-ax3.hist(np.sum(img_test5_warped_binary,axis=0))
+ax3.plot(np.sum(img_test5_warped_binary[img_test5_warped_binary.shape[0]/2:,:], axis=0))
 
 ax3.set_title('test5.jpg histogram', fontsize = 20)
 
