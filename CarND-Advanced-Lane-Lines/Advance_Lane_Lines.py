@@ -14,7 +14,7 @@
 # 
 # ## First, I'll compute the camera calibration using chessboard images
 
-# In[2]:
+# In[97]:
 
 import numpy as np
 import cv2
@@ -54,7 +54,7 @@ for fname in images:
 #cv2.destroyAllWindows()
 
 
-# In[3]:
+# In[98]:
 
 import pickle
 get_ipython().magic('matplotlib inline')
@@ -83,7 +83,7 @@ ax2.imshow(dst)
 ax2.set_title('Undistorted Image', fontsize=30)
 
 
-# In[4]:
+# In[99]:
 
 # Test undistortion on a lane image
 img_str8 = cv2.imread('test_images/straight_lines1.jpg')
@@ -108,7 +108,7 @@ ax2.imshow(cv2.cvtColor(img_test5_undistorted, cv2.COLOR_BGR2RGB))
 ax2.set_title('Undistorted test5.jpg', fontsize=20)
 
 
-# In[9]:
+# In[100]:
 
 def warper(img, src, dst):
 
@@ -120,7 +120,7 @@ def warper(img, src, dst):
     return warped
 
 
-# In[10]:
+# In[101]:
 
 src = np.float32(
     [[(img_size[0] / 2) - 55, img_size[1] / 2 + 100],
@@ -150,7 +150,7 @@ ax2.set_title('Warped test5.jpg', fontsize=20)
 
 # ## The next step is to prepare the image images before edge detection, focusing on yellow and white lines
 
-# In[13]:
+# In[102]:
 
 # test a few images first
 test5_HLS_img = cv2.cvtColor(img_test5_warped, cv2.COLOR_RGB2HLS).astype(np.float)
@@ -205,7 +205,7 @@ ax3.set_title('test5 Gray Sobel Abs', fontsize = 20)
 
 # ## Detect lane pixels 
 
-# In[32]:
+# In[103]:
 
 import numpy as np
 import cv2
@@ -272,7 +272,7 @@ ax4.set_title('test5.jpg bottom half histogram', fontsize = 10)
 
 # ## Determine Lane Curvature and Vehicle position with respect to center
 
-# In[51]:
+# In[104]:
 
 import numpy as np
 import cv2
@@ -346,11 +346,34 @@ def scan_for_lanes(binary_warped):
     # Fit a second order polynomial to each
     left_fit = np.polyfit(lefty, leftx, 2)
     right_fit = np.polyfit(righty, rightx, 2)
+
+    ploty = np.linspace(0, out_img.shape[0]-1, out_img.shape[0] )
+    # Define y-value where we want radius of curvature
+    # I'll choose the maximum y-value, corresponding to the bottom of the image
+    y_eval = np.max(ploty)
+    left_curverad = ((1 + (2*left_fit[0]*y_eval + left_fit[1])**2)**1.5) / np.absolute(2*left_fit[0])
+    right_curverad = ((1 + (2*right_fit[0]*y_eval + right_fit[1])**2)**1.5) / np.absolute(2*right_fit[0])
+    print('left radius:', left_curverad, 'pixels', '- right radius:', right_curverad, 'pixels')
+    # Example values: 1926.74 1908.48
+
+    # Define conversions in x and y from pixels space to meters
+    ym_per_pix = 30/720 # meters per pixel in y dimension
+    xm_per_pix = 3.7/700 # meters per pixel in x dimension
+
+    # Fit new polynomials to x,y in world space
+    left_fit_cr = np.polyfit(lefty*ym_per_pix, leftx*xm_per_pix, 2)
+    right_fit_cr = np.polyfit(righty*ym_per_pix, rightx*xm_per_pix, 2)
+    # Calculate the new radii of curvature
+    left_curverad = ((1 + (2*left_fit_cr[0]*y_eval*ym_per_pix + left_fit_cr[1])**2)**1.5) / np.absolute(2*left_fit_cr[0])
+    right_curverad = ((1 + (2*right_fit_cr[0]*y_eval*ym_per_pix + right_fit_cr[1])**2)**1.5) / np.absolute(2*right_fit_cr[0])
+    # Now our radius of curvature is in meters
+    print('left radius:', left_curverad, 'm', '- right radius:', right_curverad, 'm')
+    # Example values: 632.1 m    626.2 m
     
     return left_fit, right_fit, out_img
 
 
-# In[52]:
+# In[105]:
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -373,7 +396,7 @@ def plot_lanes_on_warped(left_fit, right_fit, out_img):
     plt.ylim(720, 0)
 
 
-# In[53]:
+# In[106]:
 
 str8_left_fit, str8_right_fit, str8_out_img = scan_for_lanes(img_str8_warped_binary)
 plot_lanes_on_warped(str8_left_fit, str8_right_fit, str8_out_img)
@@ -381,13 +404,118 @@ plot_lanes_on_warped(str8_left_fit, str8_right_fit, str8_out_img)
 
 # The polynomial fitting on clean images works great.
 
-# In[54]:
+# In[107]:
 
 test5_left_fit, test5_right_fit, test5_out_img = scan_for_lanes(img_test5_warped_binary)
 plot_lanes_on_warped(test5_left_fit, test5_right_fit, test5_out_img)
 
 
 # On the shadowy image, the left lane isnt calculated accurately and results in an extra bend
+
+# In[108]:
+
+def another_funk():
+    # Assume you now have a new warped binary image 
+    # from the next frame of video (also called "binary_warped")
+    # It's now much easier to find line pixels!
+    nonzero = binary_warped.nonzero()
+    nonzeroy = np.array(nonzero[0])
+    nonzerox = np.array(nonzero[1])
+    margin = 100
+    left_lane_inds = ((nonzerox > (left_fit[0]*(nonzeroy**2) + left_fit[1]*nonzeroy + left_fit[2] - margin)) & (nonzerox < (left_fit[0]*(nonzeroy**2) + left_fit[1]*nonzeroy + left_fit[2] + margin))) 
+    right_lane_inds = ((nonzerox > (right_fit[0]*(nonzeroy**2) + right_fit[1]*nonzeroy + right_fit[2] - margin)) & (nonzerox < (right_fit[0]*(nonzeroy**2) + right_fit[1]*nonzeroy + right_fit[2] + margin)))  
+    
+    # Again, extract left and right line pixel positions
+    leftx = nonzerox[left_lane_inds]
+    lefty = nonzeroy[left_lane_inds] 
+    rightx = nonzerox[right_lane_inds]
+    righty = nonzeroy[right_lane_inds]
+    # Fit a second order polynomial to each
+    left_fit = np.polyfit(lefty, leftx, 2)
+    right_fit = np.polyfit(righty, rightx, 2)
+    # Generate x and y values for plotting
+    ploty = np.linspace(0, binary_warped.shape[0]-1, binary_warped.shape[0] )
+    left_fitx = left_fit[0]*ploty**2 + left_fit[1]*ploty + left_fit[2]
+    right_fitx = right_fit[0]*ploty**2 + right_fit[1]*ploty + right_fit[2]
+
+
+# In[109]:
+
+def another_funk_plot():
+    # Create an image to draw on and an image to show the selection window
+    out_img = np.dstack((binary_warped, binary_warped, binary_warped))*255
+    window_img = np.zeros_like(out_img)
+    # Color in left and right line pixels
+    out_img[nonzeroy[left_lane_inds], nonzerox[left_lane_inds]] = [255, 0, 0]
+    out_img[nonzeroy[right_lane_inds], nonzerox[right_lane_inds]] = [0, 0, 255]
+    
+    # Generate a polygon to illustrate the search window area
+    # And recast the x and y points into usable format for cv2.fillPoly()
+    left_line_window1 = np.array([np.transpose(np.vstack([left_fitx-margin, ploty]))])
+    left_line_window2 = np.array([np.flipud(np.transpose(np.vstack([left_fitx+margin, ploty])))])
+    left_line_pts = np.hstack((left_line_window1, left_line_window2))
+    right_line_window1 = np.array([np.transpose(np.vstack([right_fitx-margin, ploty]))])
+    right_line_window2 = np.array([np.flipud(np.transpose(np.vstack([right_fitx+margin, ploty])))])
+    right_line_pts = np.hstack((right_line_window1, right_line_window2))
+    
+    # Draw the lane onto the warped blank image
+    cv2.fillPoly(window_img, np.int_([left_line_pts]), (0,255, 0))
+    cv2.fillPoly(window_img, np.int_([right_line_pts]), (0,255, 0))
+    result = cv2.addWeighted(out_img, 1, window_img, 0.3, 0)
+    plt.imshow(result)
+    plt.plot(left_fitx, ploty, color='yellow')
+    plt.plot(right_fitx, ploty, color='yellow')
+    plt.xlim(0, 1280)
+    plt.ylim(720, 0)
+
+
+# ## Draw lines back onto original image
+
+# In[119]:
+
+def unwarper(left_fit, right_fit, warped, undist, src, dst):
+    # Create an image to draw the lines on
+    # Generate x and y values for plotting
+    ploty = np.linspace(0, warped.shape[0]-1, warped.shape[0] )
+    left_fitx = left_fit[0]*ploty**2 + left_fit[1]*ploty + left_fit[2]
+    right_fitx = right_fit[0]*ploty**2 + right_fit[1]*ploty + right_fit[2]
+    
+    #warp_zero = np.zeros_like(warped).astype(np.uint8)
+    color_warp = np.zeros_like(warped).astype(np.uint8)
+    #color_warp = np.dstack((warp_zero, warp_zero, warp_zero))
+    
+    # Recast the x and y points into usable format for cv2.fillPoly()
+    pts_left = np.array([np.transpose(np.vstack([left_fitx, ploty]))])
+    pts_right = np.array([np.flipud(np.transpose(np.vstack([right_fitx, ploty])))])
+    pts = np.hstack((pts_left, pts_right))
+    
+    # Draw the lane onto the warped blank image
+    cv2.fillPoly(color_warp, np.int_([pts]), (0,255, 0))
+    
+    # Calculate Minv
+    Minv = cv2.getPerspectiveTransform(dst, src)
+    
+    # Warp the blank back to original image space using inverse perspective matrix (Minv)
+    newwarp = cv2.warpPerspective(color_warp, Minv, (undist.shape[1], undist.shape[0])) 
+    # Combine the result with the original image
+    return cv2.addWeighted(undist, 1, newwarp, 0.3, 0)
+
+
+# In[120]:
+
+img_str8_undist_plus_lanes = unwarper(str8_left_fit, str8_right_fit, img_str8_warped, img_str8_undistorted, src, dst)
+plt.imshow(cv2.cvtColor(img_str8_undist_plus_lanes, cv2.COLOR_BGR2RGB))
+
+
+# In perfect conditions the unwarped polygon looks to be a perfect fit.
+
+# In[121]:
+
+img_test5_undist_plus_lanes = unwarper(test5_left_fit, test5_right_fit, img_test5_warped, img_test5_undistorted, src, dst)
+plt.imshow(cv2.cvtColor(img_test5_undist_plus_lanes, cv2.COLOR_BGR2RGB))
+
+
+# The poor fit on the polyline is seen here, but it is not as dramatic as from the "birds eye" perspective.
 
 # In[ ]:
 
