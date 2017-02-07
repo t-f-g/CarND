@@ -83,16 +83,18 @@ ax2.imshow(dst)
 ax2.set_title('Undistorted Image', fontsize=30)
 
 
-# In[99]:
+# In[126]:
+
+def undistort(input_image):
+    distortion = pickle.load(open( "output_images/dist_pickle.p", "rb" ) )
+    return cv2.undistort(input_image, distortion["mtx"], distortion["dist"], None, distortion["mtx"])
 
 # Test undistortion on a lane image
 img_str8 = cv2.imread('test_images/straight_lines1.jpg')
 img_test5 = cv2.imread('test_images/test5.jpg')
 
-distortion = pickle.load(open( "output_images/dist_pickle.p", "rb" ) )
-
-img_str8_undistorted = cv2.undistort(img_str8, distortion["mtx"], distortion["dist"], None, distortion["mtx"])
-img_test5_undistorted = cv2.undistort(img_test5, distortion["mtx"], distortion["dist"], None, distortion["mtx"])
+img_str8_undistorted = undistort(img_str8)
+img_test5_undistorted = undistort(img_test5)
 
 # Visualize undistortion
 f, (ax1, ax2) = plt.subplots(1, 2, figsize=(20,10))
@@ -108,33 +110,32 @@ ax2.imshow(cv2.cvtColor(img_test5_undistorted, cv2.COLOR_BGR2RGB))
 ax2.set_title('Undistorted test5.jpg', fontsize=20)
 
 
-# In[100]:
+# In[128]:
 
-def warper(img, src, dst):
-
-    # Compute and apply perpective transform
+def warper(img):
     img_size = (img.shape[1], img.shape[0])
+    
+    src = np.float32(
+    [[(img_size[0] / 2) - 55, img_size[1] / 2 + 100],
+    [((img_size[0] / 6) - 10), img_size[1]],
+    [(img_size[0] * 5 / 6) + 60, img_size[1]],
+    [(img_size[0] / 2 + 55), img_size[1] / 2 + 100]])
+    dst = np.float32(
+    [[(img_size[0] / 4), 0],
+    [(img_size[0] / 4), img_size[1]],
+    [(img_size[0] * 3 / 4), img_size[1]],
+    [(img_size[0] * 3 / 4), 0]])
+
     M = cv2.getPerspectiveTransform(src, dst)
     warped = cv2.warpPerspective(img, M, img_size, flags=cv2.INTER_CUBIC)  # keep same size as input image
 
     return warped
 
 
-# In[101]:
+# In[129]:
 
-src = np.float32(
-    [[(img_size[0] / 2) - 55, img_size[1] / 2 + 100],
-    [((img_size[0] / 6) - 10), img_size[1]],
-    [(img_size[0] * 5 / 6) + 60, img_size[1]],
-    [(img_size[0] / 2 + 55), img_size[1] / 2 + 100]])
-dst = np.float32(
-    [[(img_size[0] / 4), 0],
-    [(img_size[0] / 4), img_size[1]],
-    [(img_size[0] * 3 / 4), img_size[1]],
-    [(img_size[0] * 3 / 4), 0]])
-
-img_str8_warped = warper(img_str8_undistorted, src, dst)
-img_test5_warped = warper(img_test5_undistorted, src, dst)
+img_str8_warped = warper(img_str8_undistorted)
+img_test5_warped = warper(img_test5_undistorted)
 
 # Visualize warping
 f, (ax1, ax2) = plt.subplots(1, 2, figsize=(20,10))
@@ -272,7 +273,7 @@ ax4.set_title('test5.jpg bottom half histogram', fontsize = 10)
 
 # ## Determine Lane Curvature and Vehicle position with respect to center
 
-# In[104]:
+# In[135]:
 
 import numpy as np
 import cv2
@@ -353,7 +354,7 @@ def scan_for_lanes(binary_warped):
     y_eval = np.max(ploty)
     left_curverad = ((1 + (2*left_fit[0]*y_eval + left_fit[1])**2)**1.5) / np.absolute(2*left_fit[0])
     right_curverad = ((1 + (2*right_fit[0]*y_eval + right_fit[1])**2)**1.5) / np.absolute(2*right_fit[0])
-    print('left radius:', left_curverad, 'pixels', '- right radius:', right_curverad, 'pixels')
+    #print('left radius:', left_curverad, 'pixels', '- right radius:', right_curverad, 'pixels')
     # Example values: 1926.74 1908.48
 
     # Define conversions in x and y from pixels space to meters
@@ -367,7 +368,7 @@ def scan_for_lanes(binary_warped):
     left_curverad = ((1 + (2*left_fit_cr[0]*y_eval*ym_per_pix + left_fit_cr[1])**2)**1.5) / np.absolute(2*left_fit_cr[0])
     right_curverad = ((1 + (2*right_fit_cr[0]*y_eval*ym_per_pix + right_fit_cr[1])**2)**1.5) / np.absolute(2*right_fit_cr[0])
     # Now our radius of curvature is in meters
-    print('left radius:', left_curverad, 'm', '- right radius:', right_curverad, 'm')
+    #print('left radius:', left_curverad, 'm', '- right radius:', right_curverad, 'm')
     # Example values: 632.1 m    626.2 m
     
     return left_fit, right_fit, out_img
@@ -471,9 +472,20 @@ def another_funk_plot():
 
 # ## Draw lines back onto original image
 
-# In[119]:
+# In[130]:
 
-def unwarper(left_fit, right_fit, warped, undist, src, dst):
+def unwarper(left_fit, right_fit, warped, undist):
+    src = np.float32(
+    [[(img_size[0] / 2) - 55, img_size[1] / 2 + 100],
+    [((img_size[0] / 6) - 10), img_size[1]],
+    [(img_size[0] * 5 / 6) + 60, img_size[1]],
+    [(img_size[0] / 2 + 55), img_size[1] / 2 + 100]])
+    dst = np.float32(
+    [[(img_size[0] / 4), 0],
+    [(img_size[0] / 4), img_size[1]],
+    [(img_size[0] * 3 / 4), img_size[1]],
+    [(img_size[0] * 3 / 4), 0]])
+    
     # Create an image to draw the lines on
     # Generate x and y values for plotting
     ploty = np.linspace(0, warped.shape[0]-1, warped.shape[0] )
@@ -501,21 +513,50 @@ def unwarper(left_fit, right_fit, warped, undist, src, dst):
     return cv2.addWeighted(undist, 1, newwarp, 0.3, 0)
 
 
-# In[120]:
+# In[131]:
 
-img_str8_undist_plus_lanes = unwarper(str8_left_fit, str8_right_fit, img_str8_warped, img_str8_undistorted, src, dst)
+img_str8_undist_plus_lanes = unwarper(str8_left_fit, str8_right_fit, img_str8_warped, img_str8_undistorted)
 plt.imshow(cv2.cvtColor(img_str8_undist_plus_lanes, cv2.COLOR_BGR2RGB))
 
 
 # In perfect conditions the unwarped polygon looks to be a perfect fit.
 
-# In[121]:
+# In[132]:
 
-img_test5_undist_plus_lanes = unwarper(test5_left_fit, test5_right_fit, img_test5_warped, img_test5_undistorted, src, dst)
+img_test5_undist_plus_lanes = unwarper(test5_left_fit, test5_right_fit, img_test5_warped, img_test5_undistorted)
 plt.imshow(cv2.cvtColor(img_test5_undist_plus_lanes, cv2.COLOR_BGR2RGB))
 
 
 # The poor fit on the polyline is seen here, but it is not as dramatic as from the "birds eye" perspective.
+
+# ## Run it on a movie
+
+# In[136]:
+
+def process(image):
+    undistorted_image = undistort(image)
+    warped_image = warper(undistorted_image)
+    binary_warped_image = pipeline(warped_image)
+    left_fit, right_fit, out_img = scan_for_lanes(binary_warped_image)
+    output = unwarper(left_fit, right_fit, warped_image, undistorted_image)
+    return output
+
+img_test = cv2.imread('test_images/test3.jpg')
+plt.imshow(cv2.cvtColor(process(img_test), cv2.COLOR_BGR2RGB))
+
+
+# In[137]:
+
+from moviepy.editor import VideoFileClip
+
+print('Processing video ...')
+##clip = VideoFileClip('harder_challenge_video.mp4')
+#clip = VideoFileClip('challenge_video.mp4')
+input_clip = VideoFileClip('project_video.mp4')
+video_clip = input_clip.fl_image(process)
+output_file = 'output_images\project_video_processed.mp4'
+video_clip.write_videofile(output_file, audio=False)
+
 
 # In[ ]:
 
