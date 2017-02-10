@@ -14,7 +14,7 @@
 # 
 # ## First, I'll compute the camera calibration using chessboard images
 
-# In[97]:
+# In[1]:
 
 import numpy as np
 import cv2
@@ -54,7 +54,7 @@ for fname in images:
 #cv2.destroyAllWindows()
 
 
-# In[98]:
+# In[2]:
 
 import pickle
 get_ipython().magic('matplotlib inline')
@@ -83,7 +83,7 @@ ax2.imshow(dst)
 ax2.set_title('Undistorted Image', fontsize=30)
 
 
-# In[126]:
+# In[3]:
 
 def undistort(input_image):
     distortion = pickle.load(open( "output_images/dist_pickle.p", "rb" ) )
@@ -91,9 +91,11 @@ def undistort(input_image):
 
 # Test undistortion on a lane image
 img_str8 = cv2.imread('test_images/straight_lines1.jpg')
-img_test5 = cv2.imread('test_images/test5.jpg')
+img_test1 = cv2.imread('test_images/test1.jpg') 
+img_test5 = cv2.imread('test_images/test5.jpg') 
 
 img_str8_undistorted = undistort(img_str8)
+img_test1_undistorted = undistort(img_test1)
 img_test5_undistorted = undistort(img_test5)
 
 # Visualize undistortion
@@ -104,13 +106,19 @@ ax2.imshow(cv2.cvtColor(img_str8_undistorted, cv2.COLOR_BGR2RGB))
 ax2.set_title('Undistorted straight_lines1.jpg', fontsize=20)
 
 f, (ax1, ax2) = plt.subplots(1, 2, figsize=(20,10))
+ax1.imshow(cv2.cvtColor(img_test1, cv2.COLOR_BGR2RGB))
+ax1.set_title('Original test1.jpg', fontsize=20)
+ax2.imshow(cv2.cvtColor(img_test1_undistorted, cv2.COLOR_BGR2RGB))
+ax2.set_title('Undistorted test1.jpg', fontsize=20)
+
+f, (ax1, ax2) = plt.subplots(1, 2, figsize=(20,10))
 ax1.imshow(cv2.cvtColor(img_test5, cv2.COLOR_BGR2RGB))
 ax1.set_title('Original test5.jpg', fontsize=20)
 ax2.imshow(cv2.cvtColor(img_test5_undistorted, cv2.COLOR_BGR2RGB))
 ax2.set_title('Undistorted test5.jpg', fontsize=20)
 
 
-# In[128]:
+# In[4]:
 
 def warper(img):
     img_size = (img.shape[1], img.shape[0])
@@ -132,26 +140,30 @@ def warper(img):
     return warped
 
 
-# In[129]:
+# In[5]:
 
 img_str8_warped = warper(img_str8_undistorted)
+img_test1_warped = warper(img_test1_undistorted)
 img_test5_warped = warper(img_test5_undistorted)
 
 # Visualize warping
-f, (ax1, ax2) = plt.subplots(1, 2, figsize=(20,10))
+f, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(20,10))
 img_str8_warped = cv2.cvtColor(img_str8_warped, cv2.COLOR_BGR2RGB)
 ax1.imshow(img_str8_warped)
 ax1.set_title('Warped straight_lines1.jpg', fontsize=20)
+img_test1_warped = cv2.cvtColor(img_test1_warped, cv2.COLOR_BGR2RGB)
+ax2.imshow(img_test1_warped)
+ax2.set_title('Warped test1.jpg', fontsize=20)
 img_test5_warped = cv2.cvtColor(img_test5_warped, cv2.COLOR_BGR2RGB)
-ax2.imshow(img_test5_warped)
-ax2.set_title('Warped test5.jpg', fontsize=20)
+ax3.imshow(img_test5_warped)
+ax3.set_title('Warped test5.jpg', fontsize=20)
 
 
 # The results above show us that our perspective warp is working fine.
 
 # ## The next step is to prepare the image images before edge detection, focusing on yellow and white lines
 
-# In[102]:
+# In[6]:
 
 # test a few images first
 test5_HLS_img = cv2.cvtColor(img_test5_warped, cv2.COLOR_RGB2HLS).astype(np.float)
@@ -206,7 +218,7 @@ ax3.set_title('test5 Gray Sobel Abs', fontsize = 20)
 
 # ## Detect lane pixels 
 
-# In[103]:
+# In[7]:
 
 import numpy as np
 import cv2
@@ -214,7 +226,7 @@ import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
 
 # Edit this function to create your own pipeline.
-def pipeline(img, s_thresh=(175, 245), sx_thresh=(25, 145)):
+def pipeline(img, s_thresh=(175, 200), sx_thresh=(25, 145)):
     img = np.copy(img)
     # Convert to HLS color space and separate the L, S channel
     hls = cv2.cvtColor(img, cv2.COLOR_RGB2HLS).astype(np.float)
@@ -254,6 +266,20 @@ ax3.set_title('test5.jpg top half histogram', fontsize = 10)
 ax4.plot(np.sum(img_str8_warped_binary[int(img_str8_warped_binary.shape[0]/2):,:], axis=0))
 ax4.set_title('test5.jpg bottom half histogram', fontsize = 10)
     
+img_test1_warped_binary = pipeline(img_test1_warped)
+
+# Plot the result
+f, (ax1, ax2, ax3, ax4) = plt.subplots(1, 4, figsize=(20,4))
+
+ax1.imshow(img_test1_warped)
+ax1.set_title('test1.jpg warped', fontsize = 10)
+ax2.imshow(img_test1_warped_binary, cmap='gray')
+ax2.set_title('test1.jpg after gradient thresholding', fontsize = 10)
+ax3.plot(np.sum(img_test1_warped_binary[:int(img_test1_warped_binary.shape[0]/2),:], axis=0))
+ax3.set_title('test1.jpg top half histogram', fontsize = 10)
+ax4.plot(np.sum(img_test1_warped_binary[int(img_test1_warped_binary.shape[0]/2):,:], axis=0))
+ax4.set_title('test1.jpg bottom half histogram', fontsize = 10)
+    
 img_test5_warped_binary = pipeline(img_test5_warped)
 
 # Plot the result
@@ -272,8 +298,9 @@ ax4.set_title('test5.jpg bottom half histogram', fontsize = 10)
 # The results of our image processing show us that for some difficult frames, portions of the lane will not be correctly detected unless a smart algorithm is put into place.  For instance, it could start at the bottom of the frame to find, follow and predict the curvature for higher parts of the frame, disregarding any other peaks.  Another way is if the right lane is definately identified, to predict where the left lane should be - since the distance between the lane lines is known.
 
 # ## Determine Lane Curvature and Vehicle position with respect to center
+# Lane curvature is calculated using the published formulas.  The center of the lane is calculated based on the centerpoint of the two lanes and its relation to the center of the camera image.
 
-# In[135]:
+# In[27]:
 
 import numpy as np
 import cv2
@@ -282,7 +309,10 @@ import matplotlib.pyplot as plt
 def scan_for_lanes(binary_warped):
     # Assuming you have created a warped binary image called "binary_warped"
     # Take a histogram of the bottom half of the image
-    histogram = np.sum(binary_warped[int(binary_warped.shape[0]/2):,:], axis=0)
+    histogram = np.sum(binary_warped[int(binary_warped.shape[0]/3):,:], axis=0)
+    # Remove peaks on left and right borders, they are probably road edges
+    histogram[:50] = 0
+    histogram[-50:] = 0
     # Create an output image to draw on and  visualize the result
     out_img = np.dstack((binary_warped, binary_warped, binary_warped))*255
     # Find the peak of the left and right halves of the histogram
@@ -290,6 +320,9 @@ def scan_for_lanes(binary_warped):
     midpoint = np.int(histogram.shape[0]/2)
     leftx_base = np.argmax(histogram[:midpoint])
     rightx_base = np.argmax(histogram[midpoint:]) + midpoint
+    
+    pixels_to_center = (rightx_base + leftx_base)/2 - midpoint
+    #print(pixels_to_center)
     
     # Choose the number of sliding windows
     nwindows = 9
@@ -305,7 +338,7 @@ def scan_for_lanes(binary_warped):
     # Set the width of the windows +/- margin
     margin = 100
     # Set minimum number of pixels found to recenter window
-    minpix = 50
+    minpix = 60
     # Create empty lists to receive left and right lane pixel indices
     left_lane_inds = []
     right_lane_inds = []
@@ -330,9 +363,9 @@ def scan_for_lanes(binary_warped):
         right_lane_inds.append(good_right_inds)
         # If you found > minpix pixels, recenter next window on their mean position
         if len(good_left_inds) > minpix:
-            leftx_current = np.int(np.mean(nonzerox[good_left_inds]))
+            leftx_current = np.int((np.mean(nonzerox[good_left_inds])+leftx_current+leftx_current+leftx_current)/4)
         if len(good_right_inds) > minpix:        
-            rightx_current = np.int(np.mean(nonzerox[good_right_inds]))
+            rightx_current = np.int((np.mean(nonzerox[good_right_inds])+rightx_current+rightx_current+rightx_current)/4)
     
     # Concatenate the arrays of indices
     left_lane_inds = np.concatenate(left_lane_inds)
@@ -360,6 +393,9 @@ def scan_for_lanes(binary_warped):
     # Define conversions in x and y from pixels space to meters
     ym_per_pix = 30/720 # meters per pixel in y dimension
     xm_per_pix = 3.7/700 # meters per pixel in x dimension
+    
+    meters_to_center = pixels_to_center * xm_per_pix
+    #print('Meters to center of lane: ',meters_to_center)
 
     # Fit new polynomials to x,y in world space
     left_fit_cr = np.polyfit(lefty*ym_per_pix, leftx*xm_per_pix, 2)
@@ -371,10 +407,10 @@ def scan_for_lanes(binary_warped):
     #print('left radius:', left_curverad, 'm', '- right radius:', right_curverad, 'm')
     # Example values: 632.1 m    626.2 m
     
-    return left_fit, right_fit, out_img
+    return left_fit, right_fit, out_img, meters_to_center, left_curverad, right_curverad
 
 
-# In[105]:
+# In[28]:
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -397,82 +433,37 @@ def plot_lanes_on_warped(left_fit, right_fit, out_img):
     plt.ylim(720, 0)
 
 
-# In[106]:
+# In[30]:
 
-str8_left_fit, str8_right_fit, str8_out_img = scan_for_lanes(img_str8_warped_binary)
+str8_left_fit, str8_right_fit, str8_out_img, str8_m2c, str8_leftm, str8_rightm = scan_for_lanes(img_str8_warped_binary)
 plot_lanes_on_warped(str8_left_fit, str8_right_fit, str8_out_img)
+print('Meters to center of lane: ',str8_m2c)
+print('left radius:', str8_leftm, 'm', '- right radius:', str8_rightm, 'm')
 
 
 # The polynomial fitting on clean images works great.
 
-# In[107]:
+# In[31]:
 
-test5_left_fit, test5_right_fit, test5_out_img = scan_for_lanes(img_test5_warped_binary)
+test1_left_fit, test1_right_fit, test1_out_img, test1_m2c, test1_leftm, test1_rightm = scan_for_lanes(img_test1_warped_binary)
+plot_lanes_on_warped(test1_left_fit, test1_right_fit, test1_out_img)
+print('Meters to center of lane: ',test1_m2c)
+print('left radius:', test1_leftm, 'm', '- right radius:', test1_rightm, 'm')
+
+
+# In[32]:
+
+test5_left_fit, test5_right_fit, test5_out_img, test5_m2c, test5_leftm, test5_rightm = scan_for_lanes(img_test5_warped_binary)
 plot_lanes_on_warped(test5_left_fit, test5_right_fit, test5_out_img)
+print('Meters to center of lane: ',test5_m2c)
+print('left radius:', test5_leftm, 'm', '- right radius:', test5_rightm, 'm')
 
 
 # On the shadowy image, the left lane isnt calculated accurately and results in an extra bend
 
-# In[108]:
-
-def another_funk():
-    # Assume you now have a new warped binary image 
-    # from the next frame of video (also called "binary_warped")
-    # It's now much easier to find line pixels!
-    nonzero = binary_warped.nonzero()
-    nonzeroy = np.array(nonzero[0])
-    nonzerox = np.array(nonzero[1])
-    margin = 100
-    left_lane_inds = ((nonzerox > (left_fit[0]*(nonzeroy**2) + left_fit[1]*nonzeroy + left_fit[2] - margin)) & (nonzerox < (left_fit[0]*(nonzeroy**2) + left_fit[1]*nonzeroy + left_fit[2] + margin))) 
-    right_lane_inds = ((nonzerox > (right_fit[0]*(nonzeroy**2) + right_fit[1]*nonzeroy + right_fit[2] - margin)) & (nonzerox < (right_fit[0]*(nonzeroy**2) + right_fit[1]*nonzeroy + right_fit[2] + margin)))  
-    
-    # Again, extract left and right line pixel positions
-    leftx = nonzerox[left_lane_inds]
-    lefty = nonzeroy[left_lane_inds] 
-    rightx = nonzerox[right_lane_inds]
-    righty = nonzeroy[right_lane_inds]
-    # Fit a second order polynomial to each
-    left_fit = np.polyfit(lefty, leftx, 2)
-    right_fit = np.polyfit(righty, rightx, 2)
-    # Generate x and y values for plotting
-    ploty = np.linspace(0, binary_warped.shape[0]-1, binary_warped.shape[0] )
-    left_fitx = left_fit[0]*ploty**2 + left_fit[1]*ploty + left_fit[2]
-    right_fitx = right_fit[0]*ploty**2 + right_fit[1]*ploty + right_fit[2]
-
-
-# In[109]:
-
-def another_funk_plot():
-    # Create an image to draw on and an image to show the selection window
-    out_img = np.dstack((binary_warped, binary_warped, binary_warped))*255
-    window_img = np.zeros_like(out_img)
-    # Color in left and right line pixels
-    out_img[nonzeroy[left_lane_inds], nonzerox[left_lane_inds]] = [255, 0, 0]
-    out_img[nonzeroy[right_lane_inds], nonzerox[right_lane_inds]] = [0, 0, 255]
-    
-    # Generate a polygon to illustrate the search window area
-    # And recast the x and y points into usable format for cv2.fillPoly()
-    left_line_window1 = np.array([np.transpose(np.vstack([left_fitx-margin, ploty]))])
-    left_line_window2 = np.array([np.flipud(np.transpose(np.vstack([left_fitx+margin, ploty])))])
-    left_line_pts = np.hstack((left_line_window1, left_line_window2))
-    right_line_window1 = np.array([np.transpose(np.vstack([right_fitx-margin, ploty]))])
-    right_line_window2 = np.array([np.flipud(np.transpose(np.vstack([right_fitx+margin, ploty])))])
-    right_line_pts = np.hstack((right_line_window1, right_line_window2))
-    
-    # Draw the lane onto the warped blank image
-    cv2.fillPoly(window_img, np.int_([left_line_pts]), (0,255, 0))
-    cv2.fillPoly(window_img, np.int_([right_line_pts]), (0,255, 0))
-    result = cv2.addWeighted(out_img, 1, window_img, 0.3, 0)
-    plt.imshow(result)
-    plt.plot(left_fitx, ploty, color='yellow')
-    plt.plot(right_fitx, ploty, color='yellow')
-    plt.xlim(0, 1280)
-    plt.ylim(720, 0)
-
-
 # ## Draw lines back onto original image
 
-# In[130]:
+# In[33]:
 
 def unwarper(left_fit, right_fit, warped, undist):
     src = np.float32(
@@ -513,7 +504,7 @@ def unwarper(left_fit, right_fit, warped, undist):
     return cv2.addWeighted(undist, 1, newwarp, 0.3, 0)
 
 
-# In[131]:
+# In[34]:
 
 img_str8_undist_plus_lanes = unwarper(str8_left_fit, str8_right_fit, img_str8_warped, img_str8_undistorted)
 plt.imshow(cv2.cvtColor(img_str8_undist_plus_lanes, cv2.COLOR_BGR2RGB))
@@ -521,7 +512,13 @@ plt.imshow(cv2.cvtColor(img_str8_undist_plus_lanes, cv2.COLOR_BGR2RGB))
 
 # In perfect conditions the unwarped polygon looks to be a perfect fit.
 
-# In[132]:
+# In[35]:
+
+img_test1_undist_plus_lanes = unwarper(test1_left_fit, test1_right_fit, img_test1_warped, img_test1_undistorted)
+plt.imshow(cv2.cvtColor(img_test1_undist_plus_lanes, cv2.COLOR_BGR2RGB))
+
+
+# In[36]:
 
 img_test5_undist_plus_lanes = unwarper(test5_left_fit, test5_right_fit, img_test5_warped, img_test5_undistorted)
 plt.imshow(cv2.cvtColor(img_test5_undist_plus_lanes, cv2.COLOR_BGR2RGB))
@@ -529,23 +526,37 @@ plt.imshow(cv2.cvtColor(img_test5_undist_plus_lanes, cv2.COLOR_BGR2RGB))
 
 # The poor fit on the polyline is seen here, but it is not as dramatic as from the "birds eye" perspective.
 
-# ## Run it on a movie
+# ## Pipeline
+# Here we simply create a function that calls all our previously built functions.  This passes back the processed image so that a movie can be reassembled.
 
-# In[136]:
+# In[42]:
 
+def static_vars(**kwargs):
+    def decorate(func):
+        for k in kwargs:
+            setattr(func, k, kwargs[k])
+        return func
+    return decorate
+
+@static_vars(frame_counter=0)
 def process(image):
+    process.frame_counter += 1
     undistorted_image = undistort(image)
     warped_image = warper(undistorted_image)
     binary_warped_image = pipeline(warped_image)
-    left_fit, right_fit, out_img = scan_for_lanes(binary_warped_image)
+    left_fit, right_fit, out_img, meters_to_center, left_curverad, right_curverad = scan_for_lanes(binary_warped_image)
     output = unwarper(left_fit, right_fit, warped_image, undistorted_image)
+    output = cv2.putText(output, "Frame Number: %d" % process.frame_counter, (50, 50), cv2.FONT_HERSHEY_DUPLEX, 0.8, (0, 255, 0), 2, cv2.LINE_AA)
+    output = cv2.putText(output, "Distance from Center: %f m" % meters_to_center, (50, 80), cv2.FONT_HERSHEY_DUPLEX, 0.8, (0, 255, 0), 2, cv2.LINE_AA)
+    output = cv2.putText(output, "Left Lane Radius: %d m" % left_curverad, (50, 110), cv2.FONT_HERSHEY_DUPLEX, 0.8, (0, 255, 0), 2, cv2.LINE_AA)
+    output = cv2.putText(output, "Right Lane Radius: %d m" % right_curverad, (50, 140), cv2.FONT_HERSHEY_DUPLEX, 0.8, (0, 255, 0), 2, cv2.LINE_AA)
     return output
 
-img_test = cv2.imread('test_images/test3.jpg')
+img_test = cv2.imread('test_images/vlcsnap-error496.png')
 plt.imshow(cv2.cvtColor(process(img_test), cv2.COLOR_BGR2RGB))
 
 
-# In[137]:
+# In[43]:
 
 from moviepy.editor import VideoFileClip
 
@@ -558,7 +569,9 @@ output_file = 'output_images\project_video_processed.mp4'
 video_clip.write_videofile(output_file, audio=False)
 
 
-# In[ ]:
-
-
-
+# ## Discussion
+# The pipeline used is very simple, it doesnt pass information between frames.  So a lot of potentially useful information is lost.
+# 
+# Any environment that isnt a highway and daylight. (i.e. city / contruction zone / snow / rain / leaves on road / etc) will cause a simple pipeline like this to fail.
+# 
+# Still many elements can be reused and improved upon.
