@@ -13,6 +13,7 @@
 # - Output visual display of the lane boundaries and numerical estimation of lane curvature and vehicle position.
 # 
 # ## First, I'll compute the camera calibration using chessboard images
+# This is largely taken directly from the implementation provided in the project examples.  The OpenCV find chessboard corners function is used to do most of the work.
 
 # In[1]:
 
@@ -54,6 +55,8 @@ for fname in images:
 #cv2.destroyAllWindows()
 
 
+# ## Test undistortion on chessboard
+
 # In[2]:
 
 import pickle
@@ -82,6 +85,9 @@ ax1.set_title('Original Image', fontsize=30)
 ax2.imshow(dst)
 ax2.set_title('Undistorted Image', fontsize=30)
 
+
+# ## Undistort
+# The undistortion function simply takes the previously calculated calbration values mtx/dist and applies it to the given image
 
 # In[3]:
 
@@ -117,6 +123,9 @@ ax1.set_title('Original test5.jpg', fontsize=20)
 ax2.imshow(cv2.cvtColor(img_test5_undistorted, cv2.COLOR_BGR2RGB))
 ax2.set_title('Undistorted test5.jpg', fontsize=20)
 
+
+# ## Warping
+# The warping is done by using cv2 helper functions to get a perspective transformation matrix and then using that in another helper function to rescale the image.  The points that were chosen were provided in course material.
 
 # In[4]:
 
@@ -162,6 +171,7 @@ ax3.set_title('Warped test5.jpg', fontsize=20)
 # The results above show us that our perspective warp is working fine.
 
 # ## The next step is to prepare the image images before edge detection, focusing on yellow and white lines
+# The following section is just testing out various channels and displaying them.  The actual function that performs this comes in the next section.
 
 # In[6]:
 
@@ -216,7 +226,8 @@ ax3.set_title('test5 Gray Sobel Abs', fontsize = 20)
 
 # The results above show that thresholding on the Lightness/Gray and Saturation channels would give us the best benefit.  The Hue channel is not usable in shadow regions.
 
-# ## Detect lane pixels 
+# ## Detect lane pixels
+# In this section our goal is to filter out only the parts of the image we are interested in, the lane pixels.  This is achieved through Sobel filters to detect verticle lines in the Saturation channel of the HLS color space.  A Sobel on the grayscale is also performed.  Their combined thresholded output results in satisfactory results in lane pixel filtering. 
 
 # In[7]:
 
@@ -230,7 +241,6 @@ def pipeline(img, s_thresh=(175, 200), sx_thresh=(25, 145)):
     img = np.copy(img)
     # Convert to HLS color space and separate the L, S channel
     hls = cv2.cvtColor(img, cv2.COLOR_RGB2HLS).astype(np.float)
-    #l_channel = hls[:,:,1]
     s_channel = hls[:,:,2]
     gray = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
     # Sobel x
@@ -298,7 +308,9 @@ ax4.set_title('test5.jpg bottom half histogram', fontsize = 10)
 # The results of our image processing show us that for some difficult frames, portions of the lane will not be correctly detected unless a smart algorithm is put into place.  For instance, it could start at the bottom of the frame to find, follow and predict the curvature for higher parts of the frame, disregarding any other peaks.  Another way is if the right lane is definately identified, to predict where the left lane should be - since the distance between the lane lines is known.
 
 # ## Determine Lane Curvature and Vehicle position with respect to center
-# Lane curvature is calculated using the published formulas.  The center of the lane is calculated based on the centerpoint of the two lanes and its relation to the center of the camera image.
+# Lane curvature is calculated using the published formulas.  The center of the lane is calculated based on the centerpoint of the two lanes and its relation to the center of the camera image.  Conversion from pixels to meters is done using formulas provided in the course.
+# 
+# The scanning algorithm is largely unchanged from the one provided in the course.  I have increased the base lane region and reduced the left and right edge regions to make it more robust to the conditions posed in the video.
 
 # In[27]:
 
@@ -308,7 +320,7 @@ import matplotlib.pyplot as plt
 
 def scan_for_lanes(binary_warped):
     # Assuming you have created a warped binary image called "binary_warped"
-    # Take a histogram of the bottom half of the image
+    # Take a histogram of the bottom two thirds of the image
     histogram = np.sum(binary_warped[int(binary_warped.shape[0]/3):,:], axis=0)
     # Remove peaks on left and right borders, they are probably road edges
     histogram[:50] = 0
@@ -410,6 +422,9 @@ def scan_for_lanes(binary_warped):
     return left_fit, right_fit, out_img, meters_to_center, left_curverad, right_curverad
 
 
+# ## Plot lane lines on the warped image
+# This is a function from the course that is used to visualize the polylines for correctness.
+
 # In[28]:
 
 import numpy as np
@@ -461,7 +476,8 @@ print('left radius:', test5_leftm, 'm', '- right radius:', test5_rightm, 'm')
 
 # On the shadowy image, the left lane isnt calculated accurately and results in an extra bend
 
-# ## Draw lines back onto original image
+# ## Unwarp - Draw lines back onto original image
+# This function draws our curved lines back onto the original image.  This is done by calculating the transform matrix in reverse, from destination to source. 
 
 # In[33]:
 
@@ -483,10 +499,8 @@ def unwarper(left_fit, right_fit, warped, undist):
     left_fitx = left_fit[0]*ploty**2 + left_fit[1]*ploty + left_fit[2]
     right_fitx = right_fit[0]*ploty**2 + right_fit[1]*ploty + right_fit[2]
     
-    #warp_zero = np.zeros_like(warped).astype(np.uint8)
     color_warp = np.zeros_like(warped).astype(np.uint8)
-    #color_warp = np.dstack((warp_zero, warp_zero, warp_zero))
-    
+        
     # Recast the x and y points into usable format for cv2.fillPoly()
     pts_left = np.array([np.transpose(np.vstack([left_fitx, ploty]))])
     pts_right = np.array([np.flipud(np.transpose(np.vstack([right_fitx, ploty])))])
@@ -518,19 +532,22 @@ img_test1_undist_plus_lanes = unwarper(test1_left_fit, test1_right_fit, img_test
 plt.imshow(cv2.cvtColor(img_test1_undist_plus_lanes, cv2.COLOR_BGR2RGB))
 
 
+# The poor fit on the polyline is seen here, but it is not as dramatic as from the "birds eye" perspective.
+
 # In[36]:
 
 img_test5_undist_plus_lanes = unwarper(test5_left_fit, test5_right_fit, img_test5_warped, img_test5_undistorted)
 plt.imshow(cv2.cvtColor(img_test5_undist_plus_lanes, cv2.COLOR_BGR2RGB))
 
 
-# The poor fit on the polyline is seen here, but it is not as dramatic as from the "birds eye" perspective.
+# The fit on this test image is good.
 
 # ## Pipeline
 # Here we simply create a function that calls all our previously built functions.  This passes back the processed image so that a movie can be reassembled.
 
 # In[42]:
 
+# ref: http://stackoverflow.com/questions/279561/what-is-the-python-equivalent-of-static-variables-inside-a-function/279586#comment41067162_279586
 def static_vars(**kwargs):
     def decorate(func):
         for k in kwargs:
@@ -556,6 +573,8 @@ img_test = cv2.imread('test_images/vlcsnap-error496.png')
 plt.imshow(cv2.cvtColor(process(img_test), cv2.COLOR_BGR2RGB))
 
 
+# The process function properly displays the distance from center and left/right lane radii.  The lane looks "good enough" in this rather difficult test image.
+
 # In[43]:
 
 from moviepy.editor import VideoFileClip
@@ -574,4 +593,4 @@ video_clip.write_videofile(output_file, audio=False)
 # 
 # Any environment that isnt a highway and daylight. (i.e. city / contruction zone / snow / rain / leaves on road / etc) will cause a simple pipeline like this to fail.
 # 
-# Still many elements can be reused and improved upon.
+# Still many elements can be reused and improved upon.  i.e. you could threshold regions of the images differently, you could adapt your thresholding and filtering based on the current scene.  You could run multiple algorithms in parallel and have them vote on the lane positions.
