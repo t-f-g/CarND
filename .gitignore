@@ -52,5 +52,5 @@ data
 *.h5
 models
 *.swp
-*.p
 *.zip
+*.p
