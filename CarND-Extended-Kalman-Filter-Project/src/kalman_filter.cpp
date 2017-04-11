@@ -10,12 +10,12 @@ KalmanFilter::~KalmanFilter() {}
 
 void KalmanFilter::Init(VectorXd &x_in, MatrixXd &P_in, MatrixXd &F_in,
                         MatrixXd &H_in, MatrixXd &R_in, MatrixXd &Q_in) {
-  x_ = x_in;
-  P_ = P_in;
-  F_ = F_in;
-  H_ = H_in;
-  R_ = R_in;
-  Q_ = Q_in;
+    x_ = x_in;
+    P_ = P_in;
+    F_ = F_in;
+    H_ = H_in;
+    R_ = R_in;
+    Q_ = Q_in;
 }
 
 void KalmanFilter::Predict() {
@@ -56,7 +56,7 @@ void KalmanFilter::UpdateEKF(const VectorXd &z) {
     rho =   | / p'  + p'
             |/    x     y
     */
-    float rho = sqrt(pow(x_[0],2) + pow(x_[1],2));
+    float rho = sqrt(pow(x_[0], 2) + pow(x_[1], 2));
 
     /**
                     /p' \
@@ -70,7 +70,7 @@ void KalmanFilter::UpdateEKF(const VectorXd &z) {
   	if(fabs(x_[0]) < 0.0001){
         std::cout << "UpdateEKF () - Warning - Division by Zero, phi is max" << std::endl;
     } else {
-        phi = atan2(x_[1],x_[0]);
+        phi = atan2(x_[1], x_[0]);
     }
 
     /**
@@ -84,7 +84,7 @@ void KalmanFilter::UpdateEKF(const VectorXd &z) {
   	if(fabs(rho) < 0.0001){
         std::cout << "UpdateEKF () - Warning - Division by Zero, rho_dot is max" << std::endl;
     } else {
-        rho_dot = (x_[0]*x_[2] + x_[1]*x_[3]) / rho;
+        rho_dot = ((x_[0] * x_[2]) + (x_[1] * x_[3])) / rho;
     }
 
     /**
@@ -106,7 +106,7 @@ void KalmanFilter::UpdateEKF(const VectorXd &z) {
     MatrixXd PHt = P_ * Ht;
     MatrixXd K = PHt * Si;
 
-    //new estimate
+    // New estimate
     x_ = x_ + (K * y);
     long x_size = x_.size();
     MatrixXd I = MatrixXd::Identity(x_size, x_size);
