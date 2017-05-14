@@ -320,7 +320,7 @@ void UKF::PredictAndUpdateRadar(MeasurementPackage meas_package) {
 
   // Transform sigma points to measurement space
   for (int i = 0; i < n_sigma_; i++) {  //2n+1 simga points
-    // extract values for better readibility
+    // Extract values for better readibility
     double p_x = sigma_(0, i);
     double p_y = sigma_(1, i);
     double v  = sigma_(2, i);
@@ -328,7 +328,7 @@ void UKF::PredictAndUpdateRadar(MeasurementPackage meas_package) {
     double v1 = cos(yaw) * v;
     double v2 = sin(yaw) * v;
     double r = sqrt((p_x * p_x) + (p_y * p_y));
-    // avoid division by zero
+    // Avoid division by zero
     if (fabs(r) < 0.00001) r = 0.00001;
     Z_sigma_(0, i) = r;
     Z_sigma_(1, i) = atan2(p_y, p_x);
