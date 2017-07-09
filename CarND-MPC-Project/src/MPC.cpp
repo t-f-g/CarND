@@ -22,7 +22,7 @@ const double Lf = 2.67;
 
 double ref_cte = 0;
 double ref_epsi = 0;
-double ref_v = 65;
+double ref_v = 100;
 
 // The solver takes all the state variables and actuator
 // variables in a singular vector. Thus, we should to establish
@@ -63,14 +63,14 @@ class FG_eval {
 
     // Minimize the use of actuators.
     for (unsigned int t = 0; t < N - 1; ++t) {
-      fg[0] += 5 * CppAD::pow(vars[delta_start + t], 2);
+      fg[0] += 200 * CppAD::pow(vars[delta_start + t], 2);
       fg[0] += 5 * CppAD::pow(vars[a_start], 2);
     }
 
     // Minimize the value gap between sequential actuations.
     for (unsigned int t = 0; t < N - 2; ++t) {
-      fg[0] += 200 * CppAD::pow(vars[delta_start + t + 1] - vars[delta_start + t], 2);
-      fg[0] += 10 * CppAD::pow(vars[a_start + t + 1] - vars[a_start + t], 2);
+      fg[0] += 500 * CppAD::pow(vars[delta_start + t + 1] - vars[delta_start + t], 2);
+      fg[0] += CppAD::pow(vars[a_start + t + 1] - vars[a_start + t], 2);
     }
 
     // Setup Constraints

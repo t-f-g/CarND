@@ -91,7 +91,10 @@ int main() {
           double py = j[1]["y"];
           double psi = j[1]["psi"];
           double velocity = j[1]["speed"];
-
+          double steering_angle = j[1]["steering_angle"];
+          long int latency_ms = 100;
+          const double latency_seconds = latency_ms / 1000.0;
+          const double Lf = 2.67;
           /*
           * TODO: Calculate steering angle and throttle using MPC.
           *
@@ -123,9 +126,13 @@ int main() {
           double cte = polyeval(coeffs, 0.0);
           double epsi = -atan(coeffs[1]);
 
+          // Linear approximation of latency
+          double latency_px = velocity * latency_seconds;
+          double latency_psi = -velocity * steering_angle / Lf * latency_seconds;
+
           // Fill state vector: px, py, psi, v, cte, epsi
           Eigen::VectorXd state(6);
-          state << 0, 0, 0, velocity, cte, epsi;
+          state << latency_px, 0, latency_psi, velocity, cte, epsi;
 
           auto vars = mpc.Solve(state, coeffs);
 
@@ -144,8 +151,6 @@ int main() {
               mpc_y_vals.push_back(vars[i]);
             }
           }
-
-          double Lf = 2.67;
 
           json msgJson;
           msgJson["steering_angle"] = -vars[0] / (deg2rad(25) * Lf);
@@ -168,7 +173,7 @@ int main() {
           //
           // NOTE: REMEMBER TO SET THIS TO 100 MILLISECONDS BEFORE
           // SUBMITTING.
-          this_thread::sleep_for(chrono::milliseconds(100));
+          this_thread::sleep_for(chrono::milliseconds(latency_ms));
           ws.send(msg.data(), msg.length(), uWS::OpCode::TEXT);
         }
       } else {

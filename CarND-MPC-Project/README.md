@@ -3,9 +3,33 @@
 It compiles.
 
 ## Implementation - The Model.
-The state is initialized with a zero location/angle and current speed as well as calculated cross track error and angular error
+It is the kinematic model presented in the course material.  The state of the model is contained in various variables: px, py are the position of the in the vehicle coordinate system.  psi is the angle of the car in that system.   v is the speed of the car.   cte is the cross track error.  epsi is the angular error.
 
-The actuator weightings are based on the quiz and eventually the walkthrough session.  They worked well enough.
+The MPC controller updates the states with the following equations.
+
+variable | description
+-------- | -----------
+Lf       | the distance to the center of the vehicle's mass.
+psides0  | how we want the car to be turned.
+f0       | our reference line.
+
+
+```
+AD<double> f0 = coeffs[0] + (coeffs[1] * CppAD::pow(x0, 1)) + (coeffs[2] * CppAD::pow(x0, 2)) + (coeffs[3] * CppAD::pow(x0, 3));
+```
+
+```
+fg[1 + x_start + t] = x1 - (x0 + v0 * CppAD::cos(psi0) * dt);
+fg[1 + y_start + t] = y1 - (y0 + v0 * CppAD::sin(psi0) * dt);
+fg[1 + psi_start + t] = psi1 - (psi0 + v0 * delta0 / Lf * dt);
+fg[1 + v_start + t] = v1 - (v0 + a0 * dt);
+fg[1 + cte_start + t] = cte1 - ((f0 - y0) + (v0 * CppAD::sin(epsi0) * dt));
+fg[1 + epsi_start + t] = epsi1 - ((psi0 - psides0) + v0 * delta0 / Lf * dt);
+```  
+
+The state is initialized with a zero location/angle and current speed as well as calculated cross track error and angular error.  Later latency prediction was added.
+
+There are two actuators for this model, the acceleration and steering angle.  The actuator weightings are based on the quiz and eventually the walkthrough session with minor adjustments.
 
 ## Implementation - Timestep Length and Elapsed Duration (N & dt)
 I chose 10 steps at 100ms each for a total of 1 second of prediction as it seemed a reasonable amount for this scenario.  Higher values like 15, 20 could steer the car off the track as it becomes hard to predict.  The dt is reasonable since this is a compromise to reduce computation time.
@@ -14,7 +38,12 @@ I chose 10 steps at 100ms each for a total of 1 second of prediction as it seeme
 Yes, a transformation was done and is shown in the code.
 
 ## Implementation - Model Predictive Control with Latency
-The latency was added and the model over-steered, this was dampened by dividing the steering angle by Lf.
+The state was predicted prior to sending it to the MPC.  The prediction method was a linear approximation in the car coordinate system.
+
+```
+double latency_px = velocity * latency_seconds;
+double latency_psi = -velocity * steering_angle / Lf * latency_seconds;
+```
 
 ## Simulation - The vehicle must successfully drive a lap around the track.
 It does, albeit at a leisurely pace.
