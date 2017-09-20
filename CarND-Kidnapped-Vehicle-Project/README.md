@@ -18,8 +18,7 @@ Once the install for uWebSocketIO is complete, the main program can be built and
 
 mkdir build
 cd build
-cmake ..
-make
+`cmake .. && make` or `cmake .. -G "Unix Makefiles" && make` on Windows
 ./particle_filter
 
 Note that the programs that need to be written to accomplish the project are src/particle_filter.cpp, and particle_filter.h
