@@ -1,6 +1,26 @@
 # CarND-Path-Planning-Project
 Self-Driving Car Engineer Nanodegree Program
-   
+
+## Reflection
+This was a an enjoyable project once the environment was setup on this old Windows 7 PC and Ubuntu Virtualbox.  The walkthrough was very helpful and gave a logical base implementaiton to work with.
+
+The results are good with a very simple state machine.  This particular run averaged 46.4mph:
+![46.4 mph on average](/relatively_stable.PNG)
+
+There are some situations the model cannot cope with, like when the simulator decides to rear end the vehicle.  Also the simulator seems to want to change lanes into the lane occupied by my vehicle without notice.  This was somewhat handled by detecting the impending collision and immediately slowing down.
+![the simulator is aggresive](/rear_ended.PNG)
+
+The lane changing code is directly copied from the walkthrough.  Using splines, the path to the target lane and future coordinate was planned.  The spline was then segmented into smaller steps paced on the vehicles intended velocity.  This led to a very smooth lane change.
+
+The path planning then boils down to mainly choosing the proper lane at the proper time.  Since we knows its always three lanes the logic behind it was simplified.  I chose to prefer passing on the left and to remain in the lane as long as the maximum speed was reached.  After implementing some basic path planning it became clear that some lane changes were clipping adjecent vehicles, so the detection range was increased to negative frenet s coordinates.  It also became clear that the vehicle kept changing lanes up to 50 times a second, so lane change status was added to track when a lane change really was complete before starting a new one.
+
+There were cases where the simulator would try to change lanes into your lane.  Using the frenet d coordinates you can detect when this is about to occur for vehicles inside the s coordinate range you are scanning.  The action is to slow down, but sometime the merging vehicle does the same and continues to merge, thus causing a collision.
+
+After all these modifications, the result is a decent driver who only gets in trouble when the simulator gets too aggressive.
+
+
+# Original README follows below:
+
 ### Simulator.
 You can download the Term3 Simulator which contains the Path Planning Project from the [releases tab (https://github.com/udacity/self-driving-car-sim/releases).
 
@@ -38,13 +58,13 @@ Here is the data provided from the Simulator to the C++ Program
 #### Previous path data given to the Planner
 
 //Note: Return the previous list but with processed points removed, can be a nice tool to show how far along
-the path has processed since last time. 
+the path has processed since last time.
 
 ["previous_path_x"] The previous list of x points previously given to the simulator
 
 ["previous_path_y"] The previous list of y points previously given to the simulator
 
-#### Previous path's end s and d values 
+#### Previous path's end s and d values
 
 ["end_path_s"] The previous list's last point's frenet s value
 
@@ -52,7 +72,7 @@ the path has processed since last time.
 
 #### Sensor Fusion Data, a list of all other car's attributes on the same side of the road. (No Noise)
 
-["sensor_fusion"] A 2d vector of cars and then that car's [car's unique ID, car's x position in map coordinates, car's y position in map coordinates, car's x velocity in m/s, car's y velocity in m/s, car's s position in frenet coordinates, car's d position in frenet coordinates. 
+["sensor_fusion"] A 2d vector of cars and then that car's [car's unique ID, car's x position in map coordinates, car's y position in map coordinates, car's x velocity in m/s, car's y velocity in m/s, car's s position in frenet coordinates, car's d position in frenet coordinates.
 
 ## Details
 
@@ -82,7 +102,7 @@ A really helpful resource for doing this project and creating smooth trajectorie
   * Run either `install-mac.sh` or `install-ubuntu.sh`.
   * If you install from source, checkout to commit `e94b6e1`, i.e.
     ```
-    git clone https://github.com/uWebSockets/uWebSockets 
+    git clone https://github.com/uWebSockets/uWebSockets
     cd uWebSockets
     git checkout e94b6e1
     ```
@@ -137,4 +157,3 @@ still be compilable with cmake and make./
 
 ## How to write a README
 A well written README file can enhance your project and portfolio.  Develop your abilities to create professional README files by completing [this free course](https://www.udacity.com/course/writing-readmes--ud777).
-
