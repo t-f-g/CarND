@@ -5,10 +5,10 @@ Self-Driving Car Engineer Nanodegree Program
 This was a an enjoyable project once the environment was setup on this old Windows 7 PC and Ubuntu Virtualbox.  The walkthrough was very helpful and gave a logical base implementaiton to work with.
 
 The results are good with a very simple state machine.  This particular run averaged 46.4mph:
-![46.4 mph on average](/relatively_stable.PNG)
+![46.4 mph on average](relatively_stable.PNG)
 
 There are some situations the model cannot cope with, like when the simulator decides to rear end the vehicle.  Also the simulator seems to want to change lanes into the lane occupied by my vehicle without notice.  This was somewhat handled by detecting the impending collision and immediately slowing down.
-![the simulator is aggresive](/rear_ended.PNG)
+![the simulator is aggresive](rear_ended.PNG)
 
 The lane changing code is directly copied from the walkthrough.  Using splines, the path to the target lane and future coordinate was planned.  The spline was then segmented into smaller steps paced on the vehicles intended velocity.  This led to a very smooth lane change.
 
