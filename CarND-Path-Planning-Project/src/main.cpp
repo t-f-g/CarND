@@ -200,10 +200,13 @@ int main() {
   // Start in lane 1 (0, 1 or 2)
   int lane = 1;
 
+  // Lane change status
+  bool lane_change_status = false;
+
   // Have a reference velocity to target
   double ref_vel = 0.0; //mph
 
-  h.onMessage([&ref_vel,map_waypoints_x,&map_waypoints_y,&map_waypoints_s,&map_waypoints_dx,&map_waypoints_dy,&lane](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length,
+  h.onMessage([&ref_vel,map_waypoints_x,&map_waypoints_y,&map_waypoints_s,&map_waypoints_dx,&map_waypoints_dy,&lane,&lane_change_status](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length,
                      uWS::OpCode opCode) {
     // "42" at the start of the message means there's a websocket message event.
     // The 4 signifies a websocket message
@@ -245,44 +248,80 @@ int main() {
           	if(prev_size > 0)
             {
               car_s = end_path_s;
+              car_d = end_path_d;
             }
 
             bool too_close = false;
+            bool left_lane = true;
+            bool center_lane = true;
+            bool right_lane = true;
 
             //find ref_v to use
             for(int i = 0; i < sensor_fusion.size(); i++)
             {
               //car is in my lane
               float d = sensor_fusion[i][6];
-              if(d < (2+4*lane+2) && d > (2+4*lane-2) )
-              {
-                double vx = sensor_fusion[i][3];
-                double vy = sensor_fusion[i][4];
-                double check_speed = sqrt(vx*vx+vy*vy);
-                double check_car_s = sensor_fusion[i][5];
+              double vx = sensor_fusion[i][3];
+              double vy = sensor_fusion[i][4];
+              double check_speed = sqrt(vx*vx+vy*vy);
+              double check_car_s = sensor_fusion[i][5];
 
-                check_car_s+=((double)prev_size*.02*check_speed); //if using previous points can project s value out
-                //check s values greater than mine and s gap
-                if ((check_car_s > car_s) && ((check_car_s-car_s) < 30) )
-                {
-                  // Do some logic here, lower reference velocity so we dont crash into the car infront of us, could
-                  // also flag to try to change lanes.
-                  //ref_vel = 29.5; //mph
-                  too_close = true;
-                  if(lane > 0) // Add to finite state machine, plus cost functions
-                  {
-                    lane = 0;
+              check_car_s+=((double)prev_size*.02*check_speed); //if using previous points can project s value out
+
+              if (((check_car_s + 5) > car_s) && ((check_car_s-car_s) < 30) ) {
+                // There is a car nearby, next mark what lane its in
+                if (d < (2+4*0+2) && d > (2+4*0-2) ) {
+                  if (lane == 0) {
+                    too_close = true;
                   }
+                  left_lane = false;
+                } else if (d < (2+4*1+2) && d > (2+4*1-2) ) {
+                  if (lane == 1) {
+                    too_close = true;
+                  }
+                  center_lane = false;
+                } else if (d < (2+4*2+2) && d > (2+4*2-2) ){
+                  if (lane == 2) {
+                    too_close = true;
+                  }
+                  right_lane = false;
+                }
+                // If the simulator is forcing a car into your lane, slow down
+                if ((abs(d - car_d) < 2.0) && (abs(check_car_s - car_s) < 10)) {
+                  std::cout << "This is too close to be safe, slowing down... simulators car d: " << d << " your car d: " << car_d << std::endl;
+                  too_close = true;
                 }
               }
             }
 
-            if(too_close)
+            if (car_d < (1+4*lane+1) && car_d > (1+4*lane-1) ) {
+              lane_change_status = false;
+            } else {
+              lane_change_status = true;
+            }
+
+            if((ref_vel > 1) && (too_close))
             {
               ref_vel -= .224;
+
+              if (lane_change_status == false) {
+                //assign lane to a new lane, if possible
+                if (lane == 0 && center_lane == true) {
+                  lane = 1;
+                } else if ((lane == 1) && (left_lane == true)) {
+                  // always pass on the left in europe
+                  lane = 0;
+                } else if ((lane == 1) && (right_lane == true)) {
+                  // unless you are in the US, where passing on the right is ok
+                  lane = 2;
+                } else if ((lane == 2) && (center_lane = true)) {
+                  lane = 1;
+                }
+              } // else stay in current target lane and continue slow down until lane change is complete
             }
             else if(ref_vel < 49.5)
             {
+              //stay in current lane and enjoy the scenery
               ref_vel += .224;
             }
 
@@ -361,7 +400,7 @@ int main() {
             vector<double> next_x_vals;
             vector<double> next_y_vals;
 
-            // Start with all the previouos path points from last time
+            // Start with all the previous path points from last time
             for(int i = 0; i < previous_path_x.size(); i++)
             {
               next_x_vals.push_back(previous_path_x[i]);
