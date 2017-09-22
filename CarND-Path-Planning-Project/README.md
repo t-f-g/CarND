@@ -7,17 +7,16 @@ This was a an enjoyable project once the environment was setup on this old Windo
 The results are good with a very simple state machine.  This particular run averaged 46.4mph:
 ![46.4 mph on average](relatively_stable.PNG)
 
-There are some situations the model cannot cope with, like when the simulator decides to rear end the vehicle.  Also the simulator seems to want to change lanes into the lane occupied by my vehicle without notice.  This was somewhat handled by detecting the impending collision and immediately slowing down.
+There are some situations the model cannot cope with, like when the simulator decides to rear end the vehicle.  Also, the simulator seems to want to change lanes into the lane occupied by my vehicle without notice.  This was somewhat handled by detecting the impending collision and immediately slowing down.
 ![the simulator is aggresive](rear_ended.PNG)
 
-The lane changing code is directly copied from the walkthrough.  Using splines, the path to the target lane and future coordinate was planned.  The spline was then segmented into smaller steps paced on the vehicles intended velocity.  This led to a very smooth lane change.
+The lane changing code is directly copied from the walkthrough.  First the waypoint coordinates are roughly spaced into the future.  These are then shifted to the cars reference.  These waypoints are then fit to a spline, which resulted in the path to the target lane and future coordinate being smoothed.  The spline was then segmented into smaller steps paced on the vehicles intended velocity.  This led to a consistent lane change that did not exceed any of the jerk and acceleration constraints.
 
-The path planning then boils down to mainly choosing the proper lane at the proper time.  Since we knows its always three lanes the logic behind it was simplified.  I chose to prefer passing on the left and to remain in the lane as long as the maximum speed was reached.  After implementing some basic path planning it became clear that some lane changes were clipping adjecent vehicles, so the detection range was increased to negative frenet s coordinates.  It also became clear that the vehicle kept changing lanes up to 50 times a second, so lane change status was added to track when a lane change really was complete before starting a new one.
+The path planning then boils down to mainly choosing the proper lane at the proper time.  Since we know its always three lanes the logic behind it was simplified.  I chose to prefer passing on the left and to remain in the lane as long as the maximum speed was reached.  After implementing a basic lane changing state machine it became clear that some lane changes were clipping adjacent vehicles, so the detection range was increased to negative frenet s coordinates to avoid this.  It also became clear that the vehicle kept changing lanes up to 50 times a second, so lane change status was added to track when a lane change really was complete before starting a new one.
 
-There were cases where the simulator would try to change lanes into your lane.  Using the frenet d coordinates you can detect when this is about to occur for vehicles inside the s coordinate range you are scanning.  The action is to slow down, but sometime the merging vehicle does the same and continues to merge, thus causing a collision.
+There were cases where the simulator would try to change lanes into your lane.  Using the frenet d coordinates you can detect when this is about to occur for vehicles inside the s coordinate range you are scanning.  The resulting action is to slow down, but sometimes the merging vehicle does the same and continues to merge, thus causing a collision.
 
 After all these modifications, the result is a decent driver who only gets in trouble when the simulator gets too aggressive.
-
 
 # Original README follows below:
 
