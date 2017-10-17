@@ -92,7 +92,11 @@ def gen_batch_function(data_folder, image_shape):
                 gt_image = np.concatenate((gt_bg, np.invert(gt_bg)), axis=2)
 
                 images.append(image)
+                # use numpy flip left right
+                images.append(np.fliplr(image))
                 gt_images.append(gt_image)
+                # use numpy flip left right
+                gt_images.append(np.fliplr(gt_image))
 
             yield np.array(images), np.array(gt_images)
     return get_batches_fn
